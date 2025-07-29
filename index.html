@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Four Bar Linkage Simulation</title>
+</head>
+<body>
+	<center><div style="font-weight:bold;font-size:40px">Four Bar Linkage Simulation</div></center>
+ 	<hr/>
+ 	<center><canvas id="bar" width="750" height="500" style="border:5px solid #82D900 ;">
+	Your browser does not support the HTML5 canvas tag.</canvas> <!-- Set up a blank canvas container -->
+
+	<table border="2.5"> <!-- Set table border width -->
+ 		<tr> <!-- Row -->
+			<td colspan="3" width="500px">Position Analysis</td> <!-- colspan defines how many columns to span -->
+ 		</tr>
+ 		<tr>
+			<td width="150px"></td> <!-- Table data cell -->
+			<th width="150px">X-axis</th>
+			<th width="150px">Y-axis</th>
+		</tr>
+		<tr>				 
+			<td width="150px">Point Q</td>
+			<td width="150px" id="epCx"></td>
+			<td width="150px" id="epCy"></td>
+		</tr>		
+		<tr>
+			<td width="150px">Point P</td>
+			<td width="150px" id="epDx"></td>
+			<td width="150px" id="epDy"></td>
+		</tr>
+	</table>
+
+	<table border="2.5"> <!-- Set table border width -->
+		<tr> <!-- Row -->
+			<td colspan="3" width="500px">Angular Velocity & Angular Acceleration</td> <!-- Column span and width -->
+ 		</tr>
+ 		<tr>
+			<td width="150px"></td>
+			<th width="150px">ω (rad/s)</th>
+			<th width="150px">α (rad/s^2)</th>
+		</tr>
+		<tr>				 
+			<td width="150px" BGCOLOR="red"><b>Bar 2</b></td>
+			<td width="150px" id="w2s"></td>
+			<td width="150px" id="a2s"></td>
+		</tr>		
+		<tr>
+			<td width="150px" BGCOLOR="blue"><b>Bar 3</b></td>
+			<td width="150px" id="w3s"></td>
+			<td width="150px" id="a3s"></td>
+		</tr>
+		<tr>
+			<td width="150px" BGCOLOR="#E1E100"><b>Bar 4</b></td>
+			<td width="150px" id="w4s"></td>
+			<td width="150px" id="a4s"></td>
+		</tr>
+	</table>
+
+<script>
+
+	var c = document.getElementById("bar"); // Get the canvas element with id "bar"
+	var ctx = c.getContext("2d"); // Get 2D rendering context
+ 
+	// Crank (driving link)
+	var spC; // Starting point
+	var epC; // Ending point
+ 	var l2C = 100.0000; // Link length
+ 	var t2C = 1.5708; // Initial angle (in radians)
+ 	var dt2C = -0.0500; // Angle increment per frame (in radians)
+ 	var onC; // Timer control variable
+
+	// Coupler link
+	var spD;
+	var epD;
+	var l2D = 300.0000;
+	var t2D;
+
+	// Rocker link
+	var spE;
+	var epE;
+	var l2E = 150.0000;
+	var t2E;
+
+	// Variables for position analysis
+	var A;
+	var B;
+	var C;
+	var D;
+	var E;
+	var Ø;
+	var K;
+
+	// Angular velocity
+	var w2;
+	var w3;
+	var w4;
+
+	// Angular acceleration
+	var a2;
+	var a3;
+	var a4;
+	var aa;
+	var bb;
+
+
+	function originRotate() { // Initialize and draw the mechanism at start
+		ctx.clearRect(0, 0, bar.width, bar.height); // Clear the canvas
+
+		// Compute angles for static position
+		A = 2.0 * 300.0 * l2E * Math.cos(0.0) - 2.0 * l2C * l2E * Math.cos(t2C);
+		B = 2.0 * 300.0 * l2E * Math.sin(0.0) - 2.0 * l2C * l2E * Math.sin(t2C);
+		C = l2D * l2D - 300.0 * 300.0 - l2E * l2E - l2C * l2C + 2.0 * 300.0 * l2C * Math.cos(t2C);
+		K = Math.sqrt(A*A + B*B);
+		Ø = Math.acos(C / K);
+		t2E = Math.atan(B / A) + Ø;
+		D = 300.0 * Math.sin(0) + l2E * Math.sin(t2E) - l2C * Math.sin(t2C);
+		E = 300.0 * Math.cos(0) + l2E * Math.cos(t2E) - l2C * Math.cos(t2C);
+		t2D = Math.atan(D / E);
+
+  		//active bar
+  		spC = 
+		{
+   			x:200.0000,
+          	y:280.0000
+  		};
+  		epC = 
+		{
+          	x:spC.x + l2C*Math.cos(t2C),
+          	y:spC.y - l2C*Math.sin(t2C)
+  		};
+               
+  		ctx.beginPath();     
+         	ctx.lineWidth = 5;
+         	ctx.strokeStyle = "red";
+  		ctx.moveTo(spC.x,spC.y);
+  		ctx.lineTo(epC.x,epC.y);
+  		ctx.stroke();
+		document.getElementById("epCx").innerHTML = epC.x.toFixed(2) + "<br>";
+        document.getElementById("epCy").innerHTML = epC.y.toFixed(2) + "<br>";
+
+  		//fix bar
+  		ctx.beginPath();
+  		ctx.lineWidth = "8";
+  		ctx.strokeStyle = "black";
+  		ctx.moveTo(200, 280);
+  		ctx.lineTo(500, 280);
+  		ctx.stroke();
+
+  		//connect bar
+  		spD = 
+		{
+   		x:epC.x,
+          	y:epC.y
+  		};
+  		epD = 
+		{
+          	x:spD.x + l2D*Math.cos(t2D),
+          	y:spD.y - l2D*Math.sin(t2D)
+  		};
+               
+ 		ctx.beginPath();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "blue";
+  		ctx.moveTo(spD.x,spD.y);
+  		ctx.lineTo(epD.x,epD.y);
+  		ctx.stroke();
+		document.getElementById("epDx").innerHTML = epD.x.toFixed(2) + "<br>";
+        document.getElementById("epDy").innerHTML = epD.y.toFixed(2) + "<br>";
+
+  		//swing bar
+  		spE = 
+		{
+   			x:epD.x,
+          	y:epD.y
+  		};
+  		epE = 
+		{
+          	x:spE.x - l2E*Math.cos(t2E),
+          	y:spE.y + l2E*Math.sin(t2E)
+  		};
+               
+  		ctx.beginPath();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#E1E100";
+  		ctx.moveTo(spE.x,spE.y);
+  		ctx.lineTo(epE.x,epE.y);
+  		ctx.stroke();
+	
+		//angular velocities
+		w2 = 0;
+		document.getElementById("w2s").innerHTML = w2.toFixed(4) + "<br>";
+		w3 = 0;
+		document.getElementById("w3s").innerHTML = w3.toFixed(4) + "<br>";
+		w4 = 0;
+		document.getElementById("w4s").innerHTML = w4.toFixed(4) + "<br>";
+
+		//angular accelerations
+		a2 = 0;
+		document.getElementById("a2s").innerHTML = a2.toFixed(4) + "<br>";
+		a3 = 0;
+		document.getElementById("a3s").innerHTML = a3.toFixed(4) + "<br>";
+		a4 = 0;
+		document.getElementById("a4s").innerHTML = a4.toFixed(4) + "<br>";
+
+		//pin1
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(200, 280, 6.5, 0, 2 * Math.PI);    //前兩項為圓心,第三項爲半徑,第四項爲起始角度,第五項爲結束角度
+		ctx.fill();
+
+		//pin2
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(epC.x, epC.y, 6.5, 0, 2 * Math.PI);    //前兩項為圓心,第三項爲半徑,第四項爲起始角度,第五項爲結束角度
+		ctx.fill();
+
+		//pin3
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(epD.x, epD.y, 6.5, 0, 2 * Math.PI);    //前兩項為圓心,第三項爲半徑,第四項爲起始角度,第五項爲結束角度
+		ctx.fill();
+
+		//pin4
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(500, 280, 6.5, 0, 2 * Math.PI);    //前兩項為圓心,第三項爲半徑,第四項爲起始角度,第五項爲結束角度
+		ctx.fill();
+		
+		//point Q
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('Q', epC.x-35, epC.y-20);
+
+		//point P
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('P', epD.x+8, epD.y-15);
+
+		//point R
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('R', 500+15, 280+25);
+
+		//point O
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('O', 200-35, 280+35);
+ 	}
+
+	function rotate() { // Draw the linkage after one step rotation
+		t2C = t2C + dt2C; // Increment crank angle
+
+		// Recalculate angles for updated crank
+		A = 2 * 300 * l2E * Math.cos(0) - 2 * l2C * l2E * Math.cos(t2C);
+		B = 2 * 300 * l2E * Math.sin(0) - 2 * l2C * l2E * Math.sin(t2C);
+		C = l2D * l2D - 300 * 300 - l2E * l2E - l2C * l2C + 2 * 300 * l2C * Math.cos(t2C);
+		K = Math.sqrt(A * A + B * B);
+		Ø = Math.acos(C / K);
+		t2E = Math.atan(B / A) + Ø;
+		D = 300 * Math.sin(0) + l2E * Math.sin(t2E) - l2C * Math.sin(t2C);
+		E = 300 * Math.cos(0) + l2E * Math.cos(t2E) - l2C * Math.cos(t2C);
+		t2D = Math.atan(D / E);
+
+  		//active bar
+  		ctx.clearRect(0, 0, bar.width, bar.height);
+  		spC = 
+		{
+   			x:200.0000,
+  	        y:280.0000
+  		};
+  		epC = 
+		{
+          	x:spC.x + l2C*Math.cos(t2C),
+          	y:spC.y - l2C*Math.sin(t2C)
+  		};
+        ctx.beginPath();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "red";       
+ 		ctx.moveTo(spC.x,spC.y);
+  		ctx.lineTo(epC.x,epC.y);
+  		ctx.stroke();
+		document.getElementById("epCx").innerHTML = epC.x.toFixed(2) + "<br>";  //抓取桿件末端點的X位置,並賦予其id"epx"
+        document.getElementById("epCy").innerHTML = epC.y.toFixed(2) + "<br>";  //抓取桿件末端點的Y位置,並賦予其id"epy"
+
+  		//fix bar
+  		ctx.beginPath();
+  		ctx.lineWidth = "8";
+  		ctx.strokeStyle = "black";
+  		ctx.moveTo(200, 280);
+  		ctx.lineTo(500, 280);
+  		ctx.stroke();
+
+  		//connect bar
+  		spD = 
+		{
+   			x:epC.x,
+          	y:epC.y
+  		};
+ 		epD = 
+		{
+          	x:spD.x + l2D*Math.cos(t2D),
+          	y:spD.y - l2D*Math.sin(t2D)
+  		};
+               
+  		ctx.beginPath();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "blue";
+  		ctx.moveTo(spD.x,spD.y);
+  		ctx.lineTo(epD.x,epD.y);
+  		ctx.stroke();
+		document.getElementById("epDx").innerHTML = epD.x.toFixed(2) + "<br>";  //抓取桿件末端點的X位置,並賦予其id"epx"
+        document.getElementById("epDy").innerHTML = epD.y.toFixed(2) + "<br>";  //抓取桿件末端點的Y位置,並賦予其id"epy"
+
+  		//swing bar
+  		spE = 
+		{
+   			x:epD.x,
+          	y:epD.y
+  		};
+  		epE = 
+		{
+          	x:spE.x - l2E*Math.cos(t2E),
+          	y:spE.y + l2E*Math.sin(t2E)
+  		};
+        ctx.beginPath();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "#E1E100";       
+  		ctx.moveTo(spE.x,spE.y);
+  		ctx.lineTo(epE.x,epE.y);
+  		ctx.stroke();
+
+		// Angular velocities
+		w2 = - dt2C / 0.0500;
+		document.getElementById("w2s").innerHTML = w2.toFixed(4) + "<br>";
+		w3 = (l2C*Math.cos(t2C)*w2*l2E*Math.cos(t2E) - l2C*Math.sin(t2C)*w2*l2E*Math.sin(t2E)) / (- l2D*Math.sin(t2D)*l2E*Math.cos(t2E) + l2D*Math.cos(t2D)*l2E*Math.sin(t2E));
+		document.getElementById("w3s").innerHTML = w3.toFixed(4) + "<br>";
+		w4 = (- l2D*Math.sin(t2D)*l2C*Math.cos(t2C)*w2 + l2D*Math.cos(t2D)*l2C*Math.sin(t2C)*w2) / (- l2D*Math.sin(t2D)*l2E*Math.cos(t2E) + l2D*Math.cos(t2D)*l2E*Math.sin(t2E));
+		document.getElementById("w4s").innerHTML = w4.toFixed(4) + "<br>";
+
+		// Angular accelerations
+		aa = l2C*(Math.cos(t2C)*w2*w2 + 0*Math.sin(t2C)) + l2D*Math.cos(t2D)*w3*w3 - l2E*Math.cos(t2E)*w4*w4;
+		bb = l2C*(Math.sin(t2C)*w2*w2 - 0*Math.cos(t2C)) + l2D*Math.sin(t2D)*w3*w3 - l2E*Math.sin(t2E)*w4*w4;
+
+		a2 = 0;
+		document.getElementById("a2s").innerHTML = a2.toFixed(4) + "<br>";
+		a3 = (- aa*Math.cos(t2E) + bb*Math.sin(t2E)) / (l2D*Math.sin(t2D + t2E));
+		document.getElementById("a3s").innerHTML = a3.toFixed(4) + "<br>";
+		a4 = (aa*Math.cos(t2E) + bb*Math.sin(t2E)) / (l2E*Math.sin(t2D + t2E));
+		document.getElementById("a4s").innerHTML = a4.toFixed(4) + "<br>";
+
+		//pin1
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(200, 280, 6.5, 0, 2 * Math.PI);
+		ctx.fill();
+
+		//pin2
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(epC.x, epC.y, 6.5, 0, 2 * Math.PI);
+		ctx.fill();
+
+		//pin3
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(epD.x, epD.y, 6.5, 0, 2 * Math.PI);
+		ctx.fill();
+
+		//pin4
+  		ctx.beginPath();
+		ctx.fillStyle = "#7B7B7B";
+		ctx.arc(500, 280, 6.5, 0, 2 * Math.PI);
+		ctx.fill();
+
+		//point Q
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('Q', epC.x-35, epC.y-20);
+
+		//point P
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('P', epD.x+8, epD.y-15);
+
+		//point R
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('R', 500+15, 280+25);
+
+		//point O
+  		ctx.beginPath();
+ 		ctx.font = '40px serif';
+		ctx.fillStyle = "#00DDDD";
+ 		ctx.fillText('O', 200-35, 280+35);
+ 	}
+
+
+    function start() { // Start rotating
+		onC = setInterval(rotate, 50); // Rotate every 50 ms
+	}
+
+	function pause() { // Pause rotation
+		clearInterval(onC); // Stop the setInterval function
+	}
+
+	originRotate(); // Run at initial load to draw the static position
+
+</script>
+
+	<button type="button" onclick="start()" style="position: absolute; top:100px;left:1150px; width:90px;">
+	Start</button> <!-- Button to start animation -->
+
+	<button type="button" onclick="pause()" style="position: absolute; top:130px;left:1150px; width:90px;">
+	Pause</button> <!-- Button to pause animation -->
+</body>
+</html>
