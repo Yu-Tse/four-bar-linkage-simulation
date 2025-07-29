@@ -47,6 +47,8 @@ four-bar-linkage/
 └── preview\.png      # Optional: Add a screenshot for GitHub preview
 
 ```
+---
+<img width="857" height="826" alt="image" src="https://github.com/user-attachments/assets/0aee489f-6d27-4b40-89c6-38fd1fcf9e7d" />
 
 ---
 
