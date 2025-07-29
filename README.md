@@ -60,4 +60,6 @@ You may reuse it under the [MIT License](LICENSE).
 ## 🙋‍♂️ Author
 
 **Yu-Tse Wu** (吳雨澤)  
-*Mechanical Engineering Student at National Chung Cheng University (2019)*
+*Master’s Student at the Institute of Innovation and Semiconductor Manufacturing, National Sun Yat-sen University*
+
+GitHub: [@Yu-Tse](https://github.com/Yu-Tse)
